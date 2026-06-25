@@ -1,0 +1,1052 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#06080b" />
+  <title>Fertagus LCD — Próxima Paragem</title>
+  <style>
+    :root {
+      --bg: #05070a;
+      --panel: #0c1015;
+      --panel-2: #111821;
+      --text: #f7f9fb;
+      --muted: #8e99a7;
+      --line: #e44e55;
+      --line-soft: rgba(228, 78, 85, .18);
+      --cyan: #46d7eb;
+      --green: #68df9a;
+      --amber: #ffbd55;
+      --border: rgba(255,255,255,.11);
+      --shadow: 0 22px 55px rgba(0,0,0,.42);
+      --radius: 26px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: #020305; color: var(--text); }
+    body {
+      min-height: 100dvh;
+      font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, "Noto Sans KR", sans-serif;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 50% -10%, rgba(70,215,235,.13), transparent 38%),
+        linear-gradient(180deg, #070b10 0%, #030507 100%);
+    }
+
+    button, select { font: inherit; }
+    button { cursor: pointer; }
+
+    .app {
+      width: min(100%, 560px);
+      min-height: 100dvh;
+      margin: 0 auto;
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(10,14,19,.98), rgba(4,6,9,.99));
+      box-shadow: 0 0 100px rgba(0,0,0,.65);
+      border-left: 1px solid rgba(255,255,255,.04);
+      border-right: 1px solid rgba(255,255,255,.04);
+    }
+
+    .top-accent {
+      height: 8px;
+      background: linear-gradient(90deg, #af202b, #ef4e57 52%, #ff7d69);
+      box-shadow: 0 0 26px rgba(228,78,85,.62);
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 14px;
+      align-items: start;
+      padding: 18px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(5,8,12,.86);
+      backdrop-filter: blur(18px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .train-icon {
+      width: 38px; height: 38px; border-radius: 12px;
+      display: grid; place-items: center;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.1);
+      font-size: 20px;
+    }
+    .service { min-width: 0; }
+    .service-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .operator { color: var(--cyan); font-size: 12px; font-weight: 900; letter-spacing: .13em; text-transform: uppercase; }
+    .badge {
+      background: var(--line);
+      color: #fff;
+      border-radius: 8px;
+      padding: 5px 8px;
+      font-weight: 900;
+      font-size: 13px;
+      box-shadow: 0 0 18px rgba(228,78,85,.24);
+    }
+    .direction {
+      margin-top: 5px;
+      font-size: clamp(16px, 4vw, 21px);
+      font-weight: 850;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .direction small { color: var(--muted); font-weight: 700; }
+    .clock { text-align: right; }
+    .clock strong { display: block; font-size: 26px; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+    .clock span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .1em; }
+
+    main { padding: 18px 18px 116px; }
+
+    .status-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.035);
+      border-radius: 17px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 15px;
+    }
+    .status-left { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .status-dot {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 13px rgba(104,223,154,.65);
+      flex: none;
+    }
+    .status-dot.searching { background: var(--amber); box-shadow: 0 0 13px rgba(255,189,85,.65); animation: blink 1s infinite; }
+    .status-dot.manual { background: var(--cyan); box-shadow: 0 0 13px rgba(70,215,235,.65); }
+    .status-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mini-btn {
+      border: 0;
+      background: rgba(70,215,235,.12);
+      color: var(--cyan);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-weight: 850;
+      font-size: 12px;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      border-radius: var(--radius);
+      padding: 24px 20px 20px;
+      min-height: 310px;
+      background:
+        linear-gradient(145deg, rgba(255,255,255,.08), rgba(255,255,255,.02)),
+        radial-gradient(circle at 88% 12%, rgba(228,78,85,.24), transparent 35%),
+        #0c1118;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: var(--shadow);
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: linear-gradient(120deg, transparent 0 42%, rgba(255,255,255,.045) 48%, transparent 55%);
+      transform: translateX(-120%);
+      animation: sheen 7s ease-in-out infinite;
+    }
+    .next-label { color: var(--line); font-size: 14px; font-weight: 950; letter-spacing: .16em; text-transform: uppercase; }
+    .next-korean { color: rgba(255,255,255,.72); font-size: 20px; font-weight: 800; margin-top: 7px; }
+    .next-name {
+      margin: 13px 0 7px;
+      font-size: clamp(42px, 11vw, 67px);
+      line-height: .98;
+      letter-spacing: -.045em;
+      font-weight: 950;
+      text-wrap: balance;
+      animation: stationIn .5s cubic-bezier(.2,.8,.2,1);
+    }
+    .next-subtitle { color: var(--muted); font-size: 15px; }
+    .arrival-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 16px;
+      margin-top: 25px;
+    }
+    .arrival-copy strong { display: block; font-size: 14px; }
+    .arrival-copy span { color: var(--muted); font-size: 13px; }
+    .countdown { text-align: right; font-variant-numeric: tabular-nums; }
+    .countdown strong { font-size: clamp(38px, 9vw, 54px); line-height: 1; }
+    .countdown span { display: block; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .12em; margin-top: 4px; }
+
+    .approach {
+      position: absolute;
+      right: -48px;
+      bottom: -58px;
+      width: 190px;
+      height: 190px;
+      border: 30px solid rgba(228,78,85,.08);
+      border-radius: 50%;
+      animation: breathe 2.8s ease-in-out infinite;
+    }
+
+    .station-window {
+      margin-top: 16px;
+      border-radius: 22px;
+      background: #f6f7f7;
+      color: #111821;
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow: var(--shadow);
+    }
+    .window-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 16px;
+      background: linear-gradient(90deg, #fff, #eef1f3);
+      border-bottom: 1px solid rgba(0,0,0,.08);
+    }
+    .window-head strong { font-size: 17px; }
+    .window-head span { font-size: 12px; color: #66717c; font-weight: 750; }
+    .station-rail {
+      display: grid;
+      grid-template-columns: 1fr 1.18fr 1fr;
+      gap: 4px;
+      align-items: center;
+      padding: 20px 11px 17px;
+      background:
+        radial-gradient(circle at 86% 20%, rgba(51,189,123,.13), transparent 30%),
+        linear-gradient(180deg, #fafafa, #e9edef);
+    }
+    .rail-station { min-width: 0; text-align: center; position: relative; }
+    .rail-code {
+      width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 9px;
+      display: grid; place-items: center;
+      font-weight: 950;
+      background: #a9b2b7; color: white;
+      box-shadow: 0 0 0 6px rgba(255,255,255,.78);
+      position: relative; z-index: 2;
+    }
+    .rail-station.current .rail-code {
+      width: 64px; height: 64px;
+      font-size: 19px;
+      background: linear-gradient(145deg, #ea9317, #d86b00);
+      box-shadow: 0 0 0 8px rgba(255,255,255,.9), 0 10px 23px rgba(218,112,0,.28);
+      animation: pulseCode 2s infinite;
+    }
+    .rail-station::before {
+      content: "";
+      position: absolute;
+      top: 22px; left: -56%; right: 50%;
+      height: 8px;
+      border-radius: 99px;
+      background: #bcc4c9;
+    }
+    .rail-station:first-child::before { display: none; }
+    .rail-station.current::before { background: linear-gradient(90deg, #b9c0c5, #ed8a0e); }
+    .rail-station.current + .rail-station::before { background: linear-gradient(90deg, #ed8a0e, #b9c0c5); }
+    .rail-name { display: block; font-weight: 950; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rail-en { display: block; color: #74808a; margin-top: 3px; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    .trip-card {
+      margin-top: 16px;
+      border-radius: 22px;
+      padding: 17px;
+      background: rgba(255,255,255,.045);
+      border: 1px solid var(--border);
+    }
+    .trip-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+    .trip-top span { color: var(--muted); font-size: 12px; text-transform: uppercase; font-weight: 900; letter-spacing: .1em; }
+    .trip-top strong { display: block; font-size: 23px; margin-top: 5px; }
+    .eta { text-align: right; }
+    .eta strong { font-size: 28px; font-variant-numeric: tabular-nums; }
+    .eta small { color: var(--muted); }
+    .progress {
+      height: 11px;
+      border-radius: 99px;
+      background: rgba(255,255,255,.08);
+      margin-top: 17px;
+      overflow: hidden;
+    }
+    .progress > i {
+      display: block; height: 100%; width: 0;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--line), #ff8879);
+      box-shadow: 0 0 20px rgba(228,78,85,.38);
+      transition: width .8s cubic-bezier(.2,.8,.2,1);
+    }
+    .trip-meta { display: flex; justify-content: space-between; gap: 12px; margin-top: 10px; color: var(--muted); font-size: 12px; }
+
+    .route-card {
+      margin-top: 16px;
+      padding: 18px 16px 13px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--border);
+    }
+    .route-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 11px; }
+    .route-title strong { font-size: 17px; }
+    .route-title button { color: var(--cyan); background: transparent; border: 0; font-weight: 850; }
+    .route-list { position: relative; padding-left: 32px; }
+    .route-list::before {
+      content: "";
+      position: absolute; left: 10px; top: 15px; bottom: 20px; width: 8px;
+      border-radius: 99px; background: rgba(255,255,255,.1);
+    }
+    .route-fill {
+      position: absolute; left: 10px; top: 15px; width: 8px; height: 0;
+      border-radius: 99px; background: linear-gradient(180deg, #9b2730, var(--line));
+      transition: height .8s ease;
+      box-shadow: 0 0 18px rgba(228,78,85,.35);
+    }
+    .stop {
+      min-height: 65px;
+      position: relative;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      gap: 12px;
+      padding: 4px 0 11px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .stop:last-child { border-bottom: 0; }
+    .stop::before {
+      content: "";
+      position: absolute; left: -27px; top: 11px;
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #77818c; border: 3px solid #151a20;
+      z-index: 2;
+    }
+    .stop.passed { opacity: .48; }
+    .stop.passed::before { background: var(--line); }
+    .stop.current::before {
+      width: 16px; height: 16px; left: -30px; top: 8px;
+      background: white; border: 4px solid var(--line); box-shadow: 0 0 0 5px rgba(228,78,85,.18);
+    }
+    .stop.destination::after {
+      content: "DESTINO";
+      display: inline-block;
+      position: absolute;
+      left: 0; top: 36px;
+      color: var(--cyan); font-size: 9px; font-weight: 950; letter-spacing: .12em;
+    }
+    .stop-name { font-weight: 850; font-size: 16px; }
+    .stop-meta { margin-top: 5px; color: var(--muted); font-size: 12px; }
+    .stop-time { font-size: 16px; font-weight: 850; font-variant-numeric: tabular-nums; }
+
+    .bottom-bar {
+      position: fixed;
+      left: 50%; bottom: 0; transform: translateX(-50%);
+      width: min(100%, 560px);
+      padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 9px;
+      z-index: 30;
+      background: linear-gradient(180deg, rgba(5,8,12,.2), rgba(5,8,12,.98) 31%);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,.06);
+    }
+    .nav-btn {
+      border: 1px solid rgba(255,255,255,.09);
+      background: rgba(255,255,255,.055);
+      color: #dfe6ec;
+      border-radius: 15px;
+      min-height: 55px;
+      padding: 7px 5px;
+      display: grid;
+      place-items: center;
+      gap: 2px;
+      font-size: 11px;
+      font-weight: 780;
+    }
+    .nav-btn b { font-size: 19px; line-height: 1; }
+    .nav-btn.active { color: var(--cyan); border-color: rgba(70,215,235,.35); background: rgba(70,215,235,.1); }
+
+    .modal {
+      position: fixed; inset: 0; z-index: 60;
+      display: none; place-items: end center;
+      background: rgba(0,0,0,.67);
+      backdrop-filter: blur(9px);
+      padding: 18px;
+    }
+    .modal.open { display: grid; }
+    .sheet {
+      width: min(100%, 520px);
+      max-height: 88dvh;
+      overflow: auto;
+      border-radius: 28px;
+      background: #10151c;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 30px 90px rgba(0,0,0,.65);
+      padding: 22px;
+      animation: sheetIn .32s cubic-bezier(.2,.8,.2,1);
+    }
+    .sheet-handle { width: 48px; height: 5px; border-radius: 99px; background: rgba(255,255,255,.18); margin: -7px auto 18px; }
+    .sheet h2 { margin: 0 0 7px; font-size: 25px; }
+    .sheet p { color: var(--muted); margin: 0 0 17px; line-height: 1.5; }
+    .choice-grid { display: grid; gap: 10px; }
+    .choice {
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.045);
+      color: var(--text);
+      border-radius: 17px;
+      padding: 15px;
+      text-align: left;
+    }
+    .choice strong { display: block; font-size: 16px; }
+    .choice span { display: block; color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .choice.primary { background: rgba(70,215,235,.12); border-color: rgba(70,215,235,.36); }
+    .field { margin-top: 15px; }
+    .field label { display: block; font-weight: 850; margin-bottom: 7px; }
+    .field select {
+      width: 100%; color: white; background: #181f28;
+      border: 1px solid rgba(255,255,255,.13); border-radius: 14px;
+      padding: 13px;
+      outline: none;
+    }
+    .sheet-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+    .sheet-actions button { border: 0; border-radius: 14px; padding: 13px; font-weight: 900; }
+    .cancel { background: rgba(255,255,255,.08); color: white; }
+    .save { background: var(--cyan); color: #061016; }
+
+    .toast {
+      position: fixed; left: 50%; top: 86px; transform: translate(-50%, -20px);
+      width: min(calc(100% - 36px), 490px);
+      padding: 13px 15px;
+      border-radius: 14px;
+      background: #eef9fb; color: #071013;
+      font-weight: 850; font-size: 13px;
+      z-index: 100;
+      box-shadow: 0 18px 45px rgba(0,0,0,.35);
+      opacity: 0; pointer-events: none;
+      transition: .25s ease;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    @keyframes sheen { 0%,55% { transform: translateX(-130%); } 78%,100% { transform: translateX(130%); } }
+    @keyframes stationIn { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } to { opacity: 1; transform: translateY(0); filter: blur(0); } }
+    @keyframes breathe { 50% { transform: scale(1.08); opacity: .7; } }
+    @keyframes pulseCode { 50% { transform: scale(1.045); } }
+    @keyframes blink { 50% { opacity: .35; } }
+    @keyframes sheetIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    @media (min-width: 700px) {
+      body { padding: 24px 0; }
+      .app { min-height: calc(100dvh - 48px); border-radius: 32px; }
+      .bottom-bar { bottom: 24px; border-radius: 0 0 32px 32px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top-accent"></div>
+    <header>
+      <div class="brand-row">
+        <div class="train-icon" aria-hidden="true">🚆</div>
+        <div class="service">
+          <div class="service-top">
+            <span class="operator">Fertagus LCD</span>
+            <span class="badge" id="lineBadge">Setúbal</span>
+          </div>
+          <div class="direction"><small>sentido</small> <span id="directionText">Coina</span></div>
+        </div>
+      </div>
+      <div class="clock">
+        <strong id="clock">--:--</strong>
+        <span id="date">--</span>
+      </div>
+    </header>
+
+    <main>
+      <div class="status-strip">
+        <div class="status-left">
+          <span class="status-dot searching" id="statusDot"></span>
+          <span class="status-label" id="locationStatus">À espera de localização…</span>
+        </div>
+        <button class="mini-btn" id="changeMode">Alterar</button>
+      </div>
+
+      <section class="hero" aria-live="polite">
+        <div class="next-label">Próxima estação</div>
+        <div class="next-korean">다음 역 · Next station</div>
+        <h1 class="next-name" id="nextStation">Campolide</h1>
+        <div class="next-subtitle" id="nextSubtitle">Saída pelo lado indicado no comboio</div>
+        <div class="arrival-row">
+          <div class="arrival-copy">
+            <strong id="movementLabel">Em circulação</strong>
+            <span id="currentLabel">Agora em Sete Rios</span>
+          </div>
+          <div class="countdown">
+            <strong id="nextCountdown">03:00</strong>
+            <span>até à próxima</span>
+          </div>
+        </div>
+        <div class="approach"></div>
+      </section>
+
+      <section class="station-window">
+        <div class="window-head">
+          <strong>Mapa de bordo</strong>
+          <span id="screenRotationText">화면 1/2 · Ecrã 1/2</span>
+        </div>
+        <div class="station-rail" id="stationRail"></div>
+      </section>
+
+      <section class="trip-card">
+        <div class="trip-top">
+          <div>
+            <span>Destino escolhido</span>
+            <strong id="destinationName">Coina</strong>
+          </div>
+          <div class="eta">
+            <strong id="destinationTime">17:36</strong><br />
+            <small id="destinationMinutes">27 min</small>
+          </div>
+        </div>
+        <div class="progress"><i id="tripProgress"></i></div>
+        <div class="trip-meta">
+          <span id="stopsRemaining">6 paragens restantes</span>
+          <span id="gpsSpeed">Velocidade indisponível</span>
+        </div>
+      </section>
+
+      <section class="route-card">
+        <div class="route-title">
+          <strong>Próximas paragens</strong>
+          <button id="toggleRoute">Ver todas</button>
+        </div>
+        <div class="route-list" id="routeList">
+          <span class="route-fill" id="routeFill"></span>
+        </div>
+      </section>
+    </main>
+
+    <nav class="bottom-bar" aria-label="Controlos">
+      <button class="nav-btn active" id="navLive"><b>●</b><span>Em direto</span></button>
+      <button class="nav-btn" id="navDestination"><b>◎</b><span>Destino</span></button>
+      <button class="nav-btn" id="navVoice"><b>🔊</b><span>Voz</span></button>
+      <button class="nav-btn" id="navFullscreen"><b>⛶</b><span>Ecrã inteiro</span></button>
+    </nav>
+  </div>
+
+  <div class="modal open" id="setupModal" role="dialog" aria-modal="true" aria-labelledby="setupTitle">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h2 id="setupTitle">Como queres iniciar?</h2>
+      <p>Posso tentar perceber a estação e o sentido pelo GPS. Dentro do comboio, a precisão pode variar, por isso tens sempre seleção manual e modo demonstração.</p>
+      <div class="choice-grid">
+        <button class="choice primary" id="autoDetect">
+          <strong>📍 Detetar automaticamente</strong>
+          <span>Usa localização, proximidade às estações e movimento entre leituras.</span>
+        </button>
+        <button class="choice" id="manualSetup">
+          <strong>↕ Escolher manualmente</strong>
+          <span>Seleciona sentido, estação atual e destino.</span>
+        </button>
+        <button class="choice" id="demoMode">
+          <strong>▶ Testar animação</strong>
+          <span>Simula uma viagem completa sem precisares de estar no comboio.</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="manualModal" role="dialog" aria-modal="true" aria-labelledby="manualTitle">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h2 id="manualTitle">Configurar viagem</h2>
+      <p>Escolhe o percurso. Podes alterar outra vez a qualquer momento.</p>
+      <div class="field">
+        <label for="directionSelect">Sentido</label>
+        <select id="directionSelect">
+          <option value="forward">Roma-Areeiro → Coina</option>
+          <option value="reverse">Coina → Roma-Areeiro</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="currentSelect">Estação atual</label>
+        <select id="currentSelect"></select>
+      </div>
+      <div class="field">
+        <label for="destinationSelect">Destino</label>
+        <select id="destinationSelect"></select>
+      </div>
+      <div class="sheet-actions">
+        <button class="cancel" id="closeManual">Cancelar</button>
+        <button class="save" id="saveManual">Começar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="destinationModal" role="dialog" aria-modal="true" aria-labelledby="destinationTitle">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <h2 id="destinationTitle">Escolher destino</h2>
+      <p>O tempo previsto é recalculado a partir da posição atual.</p>
+      <div class="field">
+        <label for="quickDestinationSelect">Destino</label>
+        <select id="quickDestinationSelect"></select>
+      </div>
+      <div class="sheet-actions">
+        <button class="cancel" id="closeDestination">Cancelar</button>
+        <button class="save" id="saveDestination">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Tempos aproximados retirados do exemplo enviado pelo utilizador.
+    // Cada durationMin representa o tempo desde esta estação até à próxima.
+    const baseStations = [
+      { name: 'Roma-Areeiro', en: 'Roma-Areeiro', ko: '로마-아레이루', code: 'RA', lat: 38.7453, lon: -9.1347, durationMin: 2 },
+      { name: 'Entrecampos', en: 'Entrecampos', ko: '엔트르캄푸스', code: 'EN', lat: 38.7444, lon: -9.1484, durationMin: 4 },
+      { name: 'Sete Rios', en: 'Sete Rios', ko: '세트 히우스', code: 'SR', lat: 38.7416, lon: -9.1662, durationMin: 3 },
+      { name: 'Campolide', en: 'Campolide', ko: '캄폴리드', code: 'CA', lat: 38.7311, lon: -9.1680, durationMin: 8 },
+      { name: 'Pragal', en: 'Pragal', ko: '프라갈', code: 'PR', lat: 38.6758, lon: -9.1698, durationMin: 5 },
+      { name: 'Corroios', en: 'Corroios', ko: '코호이우스', code: 'CO', lat: 38.6437, lon: -9.1510, durationMin: 3 },
+      { name: 'Foros de Amora', en: 'Foros de Amora', ko: '포루스 드 아모라', code: 'FA', lat: 38.6202, lon: -9.1278, durationMin: 4 },
+      { name: 'Fogueteiro', en: 'Fogueteiro', ko: '포게테이루', code: 'FO', lat: 38.6132, lon: -9.1041, durationMin: 4 },
+      { name: 'Coina', en: 'Coina', ko: '코이나', code: 'CN', lat: 38.5838, lon: -9.0492, durationMin: 0 }
+    ];
+
+    const state = {
+      direction: 'forward',
+      stations: [...baseStations],
+      currentIndex: 2,
+      destinationIndex: 8,
+      segmentRemainingSec: 180,
+      segmentTotalSec: 180,
+      mode: 'manual',
+      demoTimer: null,
+      tickTimer: null,
+      watchId: null,
+      voiceEnabled: true,
+      routeExpanded: false,
+      lastNearestIndex: null,
+      lastPositionTime: null,
+      lastAnnouncedIndex: null,
+      gpsSpeed: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      lineBadge: $('lineBadge'), directionText: $('directionText'), clock: $('clock'), date: $('date'),
+      statusDot: $('statusDot'), locationStatus: $('locationStatus'), nextStation: $('nextStation'),
+      nextSubtitle: $('nextSubtitle'), movementLabel: $('movementLabel'), currentLabel: $('currentLabel'),
+      nextCountdown: $('nextCountdown'), stationRail: $('stationRail'), destinationName: $('destinationName'),
+      destinationTime: $('destinationTime'), destinationMinutes: $('destinationMinutes'), tripProgress: $('tripProgress'),
+      stopsRemaining: $('stopsRemaining'), gpsSpeed: $('gpsSpeed'), routeList: $('routeList'), routeFill: $('routeFill'),
+      setupModal: $('setupModal'), manualModal: $('manualModal'), destinationModal: $('destinationModal'),
+      directionSelect: $('directionSelect'), currentSelect: $('currentSelect'), destinationSelect: $('destinationSelect'),
+      quickDestinationSelect: $('quickDestinationSelect'), toast: $('toast'), toggleRoute: $('toggleRoute')
+    };
+
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+    function pad(n) { return String(n).padStart(2, '0'); }
+    function formatCountdown(sec) {
+      sec = Math.max(0, Math.round(sec));
+      return `${pad(Math.floor(sec / 60))}:${pad(sec % 60)}`;
+    }
+    function formatTime(date) { return `${pad(date.getHours())}:${pad(date.getMinutes())}`; }
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    }
+    function distanceKm(aLat, aLon, bLat, bLon) {
+      const R = 6371;
+      const dLat = (bLat - aLat) * Math.PI / 180;
+      const dLon = (bLon - aLon) * Math.PI / 180;
+      const q = Math.sin(dLat/2) ** 2 + Math.cos(aLat*Math.PI/180) * Math.cos(bLat*Math.PI/180) * Math.sin(dLon/2) ** 2;
+      return 2 * R * Math.atan2(Math.sqrt(q), Math.sqrt(1-q));
+    }
+    function routeStations() { return state.stations; }
+    function currentStation() { return routeStations()[state.currentIndex]; }
+    function nextStation() { return routeStations()[Math.min(state.currentIndex + 1, routeStations().length - 1)]; }
+    function destinationStation() { return routeStations()[state.destinationIndex]; }
+
+    function setDirection(direction) {
+      state.direction = direction;
+      if (direction === 'forward') {
+        state.stations = baseStations.map(s => ({...s}));
+      } else {
+        state.stations = [...baseStations].reverse().map((s, i, arr) => ({
+          ...s,
+          durationMin: i < arr.length - 1 ? baseStations[baseStations.length - 2 - i].durationMin : 0
+        }));
+      }
+      els.lineBadge.textContent = direction === 'forward' ? 'Setúbal' : 'Lisboa';
+      els.directionText.textContent = state.stations[state.stations.length - 1].name;
+      populateSelects();
+    }
+
+    function populateSelects() {
+      const options = state.stations.map((s, i) => `<option value="${i}">${escapeHtml(s.name)}</option>`).join('');
+      els.currentSelect.innerHTML = options;
+      els.destinationSelect.innerHTML = options;
+      els.quickDestinationSelect.innerHTML = options;
+      els.currentSelect.value = String(clamp(state.currentIndex, 0, state.stations.length - 1));
+      els.destinationSelect.value = String(clamp(state.destinationIndex, 0, state.stations.length - 1));
+      els.quickDestinationSelect.value = String(clamp(state.destinationIndex, 0, state.stations.length - 1));
+      restrictDestinationOptions();
+    }
+
+    function restrictDestinationOptions() {
+      [els.destinationSelect, els.quickDestinationSelect].forEach(select => {
+        [...select.options].forEach((o, i) => { o.disabled = i <= state.currentIndex; });
+        if (+select.value <= state.currentIndex) select.value = String(Math.min(state.currentIndex + 1, state.stations.length - 1));
+      });
+    }
+
+    function segmentDuration(index) {
+      return Math.max(1, state.stations[index]?.durationMin || 1) * 60;
+    }
+
+    function secondsToDestination() {
+      if (state.destinationIndex <= state.currentIndex) return 0;
+      let total = state.segmentRemainingSec;
+      for (let i = state.currentIndex + 1; i < state.destinationIndex; i++) total += segmentDuration(i);
+      return total;
+    }
+
+    function arrivalTimeFromSeconds(sec) {
+      return new Date(Date.now() + sec * 1000);
+    }
+
+    function renderRail() {
+      const stations = routeStations();
+      const prev = stations[Math.max(0, state.currentIndex - 1)];
+      const curr = stations[state.currentIndex];
+      const next = stations[Math.min(stations.length - 1, state.currentIndex + 1)];
+      const list = [prev, curr, next];
+      els.stationRail.innerHTML = list.map((s, i) => `
+        <div class="rail-station ${i === 1 ? 'current' : ''}">
+          <div class="rail-code">${escapeHtml(s.code)}</div>
+          <span class="rail-name">${escapeHtml(s.name)}</span>
+          <span class="rail-en">${escapeHtml(s.ko)} · ${escapeHtml(s.en)}</span>
+        </div>
+      `).join('');
+    }
+
+    function estimatedTimes() {
+      const now = new Date();
+      const out = [];
+      let sec = 0;
+      for (let i = state.currentIndex; i < state.stations.length; i++) {
+        if (i === state.currentIndex) sec = 0;
+        else if (i === state.currentIndex + 1) sec = state.segmentRemainingSec;
+        else sec += segmentDuration(i - 1);
+        out.push({ index: i, time: new Date(now.getTime() + sec * 1000) });
+      }
+      return out;
+    }
+
+    function renderRoute() {
+      const times = estimatedTimes();
+      const maxVisible = state.routeExpanded ? times.length : Math.min(times.length, 5);
+      const visible = times.slice(0, maxVisible);
+      els.routeList.querySelectorAll('.stop').forEach(n => n.remove());
+      visible.forEach(({index, time}) => {
+        const s = state.stations[index];
+        const div = document.createElement('div');
+        div.className = `stop ${index === state.currentIndex ? 'current' : ''} ${index === state.destinationIndex ? 'destination' : ''}`;
+        div.innerHTML = `
+          <div>
+            <div class="stop-name">${escapeHtml(s.name)}</div>
+            <div class="stop-meta">${index === state.currentIndex ? 'Estação atual' : index === state.currentIndex + 1 ? 'Próxima estação' : 'Previsto'}</div>
+          </div>
+          <div class="stop-time">${formatTime(time)}</div>
+        `;
+        els.routeList.appendChild(div);
+      });
+      const denominator = Math.max(1, visible.length - 1);
+      const fillRatio = visible.length > 1 ? .08 : 0;
+      els.routeFill.style.height = `${fillRatio * denominator * 65}px`;
+      els.toggleRoute.textContent = state.routeExpanded ? 'Ocultar' : 'Ver todas';
+    }
+
+    function render() {
+      const stations = routeStations();
+      const current = currentStation();
+      const next = nextStation();
+      const atTerminus = state.currentIndex >= stations.length - 1;
+      const toDestination = secondsToDestination();
+      const totalStops = Math.max(0, state.destinationIndex - state.currentIndex);
+      const totalRouteSegments = Math.max(1, state.destinationIndex);
+      const progress = clamp((state.currentIndex + (1 - state.segmentRemainingSec / Math.max(1, state.segmentTotalSec))) / totalRouteSegments, 0, 1);
+
+      els.directionText.textContent = stations[stations.length - 1].name;
+      els.nextStation.textContent = atTerminus ? 'Fim de linha' : next.name;
+      els.nextStation.style.animation = 'none';
+      requestAnimationFrame(() => { els.nextStation.style.animation = ''; });
+      els.nextSubtitle.textContent = atTerminus ? 'Chegaste ao destino final' : `${next.ko} · ${next.en}`;
+      els.currentLabel.textContent = `Agora em ${current.name}`;
+      els.nextCountdown.textContent = atTerminus ? '00:00' : formatCountdown(state.segmentRemainingSec);
+      els.movementLabel.textContent = atTerminus ? 'Viagem concluída' : state.segmentRemainingSec <= 45 ? 'A aproximar-se' : 'Em circulação';
+      els.destinationName.textContent = destinationStation()?.name || stations[stations.length - 1].name;
+      els.destinationTime.textContent = formatTime(arrivalTimeFromSeconds(toDestination));
+      els.destinationMinutes.textContent = `${Math.ceil(toDestination / 60)} min`;
+      els.tripProgress.style.width = `${progress * 100}%`;
+      els.stopsRemaining.textContent = `${totalStops} ${totalStops === 1 ? 'paragem restante' : 'paragens restantes'}`;
+      els.gpsSpeed.textContent = state.gpsSpeed == null ? 'Velocidade indisponível' : `${Math.round(state.gpsSpeed * 3.6)} km/h`;
+      renderRail();
+      renderRoute();
+      restrictDestinationOptions();
+    }
+
+    function announceStation() {
+      if (!state.voiceEnabled || !('speechSynthesis' in window)) return;
+      const station = nextStation();
+      if (!station || state.lastAnnouncedIndex === state.currentIndex + 1) return;
+      state.lastAnnouncedIndex = state.currentIndex + 1;
+      const msg = new SpeechSynthesisUtterance(`Próxima estação, ${station.name}. Next station, ${station.name}.`);
+      msg.lang = 'pt-PT';
+      msg.rate = .9;
+      speechSynthesis.cancel();
+      speechSynthesis.speak(msg);
+    }
+
+    function advanceStation() {
+      if (state.currentIndex >= state.stations.length - 1) {
+        stopDemo();
+        render();
+        return;
+      }
+      state.currentIndex += 1;
+      if (state.destinationIndex <= state.currentIndex) state.destinationIndex = Math.min(state.stations.length - 1, state.currentIndex + 1);
+      state.segmentTotalSec = state.mode === 'demo' ? 22 : segmentDuration(state.currentIndex);
+      state.segmentRemainingSec = state.segmentTotalSec;
+      state.lastAnnouncedIndex = null;
+      render();
+      announceStation();
+      showToast(`Chegada a ${currentStation().name}`);
+    }
+
+    function startTicker(speedMultiplier = 1) {
+      clearInterval(state.tickTimer);
+      state.tickTimer = setInterval(() => {
+        if (state.segmentRemainingSec > 0 && state.currentIndex < state.stations.length - 1) {
+          state.segmentRemainingSec -= speedMultiplier;
+          if (state.segmentRemainingSec <= 45 && state.segmentRemainingSec + speedMultiplier > 45) announceStation();
+          if (state.segmentRemainingSec <= 0) advanceStation();
+          else render();
+        }
+      }, 1000);
+    }
+
+    function startDemo() {
+      stopLocationWatch();
+      state.mode = 'demo';
+      state.currentIndex = 0;
+      state.destinationIndex = state.stations.length - 1;
+      state.segmentTotalSec = 22;
+      state.segmentRemainingSec = 22;
+      state.gpsSpeed = 16.7;
+      setStatus('Demonstração automática', 'manual');
+      closeModal(els.setupModal);
+      startTicker(1);
+      showToast('Modo demonstração iniciado');
+      render();
+    }
+
+    function stopDemo() {
+      if (state.mode === 'demo') clearInterval(state.tickTimer);
+    }
+
+    function setStatus(text, type = 'manual') {
+      els.locationStatus.textContent = text;
+      els.statusDot.className = `status-dot ${type}`;
+    }
+
+    function startGeolocation() {
+      if (!navigator.geolocation) {
+        showToast('Este navegador não suporta localização. Usa o modo manual.');
+        openManual();
+        return;
+      }
+      stopDemo();
+      state.mode = 'gps';
+      setStatus('A procurar a estação mais próxima…', 'searching');
+      closeModal(els.setupModal);
+      state.watchId = navigator.geolocation.watchPosition(onPosition, onLocationError, {
+        enableHighAccuracy: true,
+        timeout: 12000,
+        maximumAge: 3000
+      });
+      startTicker(1);
+    }
+
+    function onPosition(pos) {
+      const { latitude, longitude, speed, accuracy } = pos.coords;
+      state.gpsSpeed = Number.isFinite(speed) ? speed : null;
+      const forwardDistances = baseStations.map(s => distanceKm(latitude, longitude, s.lat, s.lon));
+      const nearestBaseIndex = forwardDistances.indexOf(Math.min(...forwardDistances));
+      const nearestDistance = forwardDistances[nearestBaseIndex];
+
+      if (state.lastNearestIndex != null && nearestBaseIndex !== state.lastNearestIndex) {
+        const inferred = nearestBaseIndex > state.lastNearestIndex ? 'forward' : 'reverse';
+        if (inferred !== state.direction) {
+          setDirection(inferred);
+          const baseName = baseStations[nearestBaseIndex].name;
+          state.currentIndex = state.stations.findIndex(s => s.name === baseName);
+          state.destinationIndex = state.stations.length - 1;
+        }
+      } else {
+        const baseName = baseStations[nearestBaseIndex].name;
+        const mapped = state.stations.findIndex(s => s.name === baseName);
+        if (mapped >= 0) state.currentIndex = mapped;
+      }
+
+      state.lastNearestIndex = nearestBaseIndex;
+      state.lastPositionTime = pos.timestamp;
+      state.segmentTotalSec = segmentDuration(state.currentIndex);
+
+      // Aproximação simples: quanto mais perto da próxima estação, menor o contador.
+      const nextIdx = Math.min(state.currentIndex + 1, state.stations.length - 1);
+      const a = state.stations[state.currentIndex];
+      const b = state.stations[nextIdx];
+      const segmentKm = Math.max(.1, distanceKm(a.lat, a.lon, b.lat, b.lon));
+      const remainingKm = distanceKm(latitude, longitude, b.lat, b.lon);
+      const ratio = clamp(remainingKm / segmentKm, 0, 1);
+      state.segmentRemainingSec = Math.max(10, Math.round(state.segmentTotalSec * ratio));
+
+      const precisionText = accuracy ? ` · precisão ${Math.round(accuracy)} m` : '';
+      setStatus(`${nearestDistance < .7 ? 'A bordo perto de' : 'Mais perto de'} ${baseStations[nearestBaseIndex].name}${precisionText}`, '');
+      if (state.destinationIndex <= state.currentIndex) state.destinationIndex = state.stations.length - 1;
+      render();
+    }
+
+    function onLocationError(error) {
+      const message = error.code === 1 ? 'Permissão de localização recusada.' : 'Não foi possível obter localização.';
+      setStatus(`${message} Usa a seleção manual.`, 'manual');
+      showToast(message);
+      openManual();
+    }
+
+    function stopLocationWatch() {
+      if (state.watchId != null && navigator.geolocation) navigator.geolocation.clearWatch(state.watchId);
+      state.watchId = null;
+    }
+
+    function openModal(modal) { modal.classList.add('open'); }
+    function closeModal(modal) { modal.classList.remove('open'); }
+    function openManual() {
+      stopDemo();
+      els.directionSelect.value = state.direction;
+      populateSelects();
+      openModal(els.manualModal);
+    }
+
+    function showToast(text) {
+      els.toast.textContent = text;
+      els.toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => els.toast.classList.remove('show'), 2600);
+    }
+
+    function applyManual() {
+      const selectedDirection = els.directionSelect.value;
+      const selectedCurrent = +els.currentSelect.value;
+      const selectedDestination = +els.destinationSelect.value;
+      stopLocationWatch();
+      state.mode = 'manual';
+      setDirection(selectedDirection);
+      state.currentIndex = selectedCurrent;
+      state.destinationIndex = selectedDestination;
+      if (state.destinationIndex <= state.currentIndex) state.destinationIndex = Math.min(state.stations.length - 1, state.currentIndex + 1);
+      state.segmentTotalSec = segmentDuration(state.currentIndex);
+      state.segmentRemainingSec = state.segmentTotalSec;
+      state.gpsSpeed = null;
+      setStatus('Posição e sentido escolhidos manualmente', 'manual');
+      closeModal(els.manualModal);
+      closeModal(els.setupModal);
+      startTicker(1);
+      render();
+      showToast('Viagem configurada');
+    }
+
+    function updateClock() {
+      const now = new Date();
+      els.clock.textContent = formatTime(now);
+      els.date.textContent = new Intl.DateTimeFormat('pt-PT', { weekday: 'short', day: '2-digit', month: 'short' }).format(now);
+    }
+
+    $('autoDetect').addEventListener('click', startGeolocation);
+    $('manualSetup').addEventListener('click', openManual);
+    $('demoMode').addEventListener('click', startDemo);
+    $('changeMode').addEventListener('click', () => openModal(els.setupModal));
+    $('closeManual').addEventListener('click', () => closeModal(els.manualModal));
+    $('saveManual').addEventListener('click', applyManual);
+
+    els.directionSelect.addEventListener('change', () => {
+      setDirection(els.directionSelect.value);
+      state.currentIndex = 0;
+      state.destinationIndex = state.stations.length - 1;
+      populateSelects();
+    });
+    els.currentSelect.addEventListener('change', () => {
+      state.currentIndex = +els.currentSelect.value;
+      restrictDestinationOptions();
+    });
+
+    $('navDestination').addEventListener('click', () => {
+      populateSelects();
+      openModal(els.destinationModal);
+    });
+    $('closeDestination').addEventListener('click', () => closeModal(els.destinationModal));
+    $('saveDestination').addEventListener('click', () => {
+      const idx = +els.quickDestinationSelect.value;
+      if (idx <= state.currentIndex) return showToast('Escolhe uma estação depois da atual.');
+      state.destinationIndex = idx;
+      closeModal(els.destinationModal);
+      render();
+      showToast(`Destino: ${destinationStation().name}`);
+    });
+
+    $('navVoice').addEventListener('click', (e) => {
+      state.voiceEnabled = !state.voiceEnabled;
+      e.currentTarget.classList.toggle('active', state.voiceEnabled);
+      e.currentTarget.querySelector('b').textContent = state.voiceEnabled ? '🔊' : '🔇';
+      showToast(state.voiceEnabled ? 'Anúncios de voz ligados' : 'Anúncios de voz desligados');
+    });
+
+    $('navFullscreen').addEventListener('click', async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (_) { showToast('O navegador bloqueou o ecrã inteiro.'); }
+    });
+
+    $('navLive').addEventListener('click', () => window.scrollTo({top: 0, behavior: 'smooth'}));
+    els.toggleRoute.addEventListener('click', () => { state.routeExpanded = !state.routeExpanded; renderRoute(); });
+
+    // Alternância visual inspirada nos LCD coreanos: o cabeçalho do mapa muda a legenda.
+    let screenNumber = 1;
+    setInterval(() => {
+      screenNumber = screenNumber === 1 ? 2 : 1;
+      $('screenRotationText').textContent = screenNumber === 1 ? '화면 1/2 · Ecrã 1/2' : '도착 정보 · Informação de chegada';
+    }, 7000);
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    setDirection('forward');
+    state.currentIndex = 2;
+    state.destinationIndex = 8;
+    state.segmentTotalSec = segmentDuration(state.currentIndex);
+    state.segmentRemainingSec = state.segmentTotalSec;
+    render();
+  </script>
+</body>
+</html>
